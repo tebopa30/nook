@@ -1,0 +1,5 @@
+Analyzing payment_repository.dart...
+
+   info - payment_repository.dart:76:46 - 'purchasePackage' is deprecated and shouldn't be used. Use purchase(PurchaseParams). Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+
+1 issue found.

@@ -1,0 +1,6 @@
+Analyzing payment_repository.dart...
+
+  error - payment_repository.dart:78:27 - The getter 'entitlements' isn't defined for the type 'PurchaseResult'. Try importing the library that defines 'entitlements', correcting the name to the name of an existing getter, or defining a getter or field named 'entitlements'. - undefined_getter
+   info - payment_repository.dart:76:44 - 'purchasePackage' is deprecated and shouldn't be used. Use purchase(PurchaseParams). Try replacing the use of the deprecated member with the replacement. - deprecated_member_use
+
+2 issues found.
