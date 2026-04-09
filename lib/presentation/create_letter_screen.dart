@@ -85,10 +85,46 @@ class _CreateLetterScreenState extends ConsumerState<CreateLetterScreen> {
     return style;
   }
 
+  Future<void> _selectDate(BuildContext context) async {
+    final paymentRepo = ref.read(paymentRepositoryProvider);
+    final isPremium = await paymentRepo.isPremium;
+    final hasStamp = await paymentRepo.hasTimeCapsuleStamp;
+    
+    // 無料プランは7日後、プレミアム/秘密の切手は1年後まで
+    final Duration maxDuration = (isPremium || hasStamp) ? const Duration(days: 365) : const Duration(days: 7);
+    final lastDate = DateTime.now().add(maxDuration);
+
+    if (mounted) {
+      final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: _selectedDate,
+        firstDate: DateTime.now(),
+        lastDate: lastDate,
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: const ColorScheme.dark(
+                primary: AppTheme.accentGold,
+                onPrimary: AppTheme.primaryDark,
+                surface: AppTheme.surfaceDark,
+                onSurface: AppTheme.textWhite,
+              ),
+            ),
+            child: child!,
+          );
+        },
+      );
+      if (picked != null && picked != _selectedDate) {
+        setState(() => _selectedDate = picked);
+      }
+    }
+  }
+
   Future<void> _handleAttachPhoto() async {
     final paymentRepo = ref.read(paymentRepositoryProvider);
     final isPremium = await paymentRepo.isPremium;
-    final int maxPhotos = isPremium ? 3 : 1;
+    final hasStamp = await paymentRepo.hasTimeCapsuleStamp;
+    final int maxPhotos = (isPremium || hasStamp) ? 3 : 1;
     
     if (_attachedPhotos.length >= maxPhotos) {
       if (!isPremium && _attachedPhotos.length == 1) {
@@ -174,6 +210,17 @@ class _CreateLetterScreenState extends ConsumerState<CreateLetterScreen> {
   }
 
   Future<void> _sendLetter() async {
+    // 文字数制限チェック
+    final isPremium = await ref.read(paymentRepositoryProvider).isPremium;
+    final charLimit = isPremium ? 5000 : 1000;
+    
+    if (_contentController.text.length > charLimit) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('文字数制限（$charLimit文字）を超えています')),
+      );
+      return;
+    }
+
     if (_toController.text.isEmpty || _contentController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('宛名と本文を入力してください')),
@@ -194,7 +241,7 @@ class _CreateLetterScreenState extends ConsumerState<CreateLetterScreen> {
             builder: (context) => AlertDialog(
               backgroundColor: AppTheme.surfaceDark,
               title: const Text('特別な切手が必要です', style: TextStyle(color: AppTheme.accentGold, fontFamily: 'serif')),
-              content: const Text('7日以上先の指定には、タイムカプセル切手、またはプレミアムプランの契約が必要です。', style: TextStyle(color: Colors.white70)),
+              content: const Text('7日以上先の指定には、秘密の切手、またはプレミアムプランの契約が必要です。', style: TextStyle(color: Colors.white70)),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
@@ -225,16 +272,13 @@ class _CreateLetterScreenState extends ConsumerState<CreateLetterScreen> {
 
       for (final photoPath in _attachedPhotos) {
         if (photoPath.contains('handwriting')) {
-          // 手書きは現状ダミーパスのまま（必要に応じてこちらも保存ロジックを追加可能）
           uploadedPhotoUrls.add(photoPath);
           if (_photoCaptions.containsKey(photoPath)) {
             updatedPhotoCaptions[photoPath] = _photoCaptions[photoPath]!;
           }
         } else {
-          // ローカルの画像ファイルを圧縮してアップロード
           final downloadUrl = await storageRepo.uploadCompressedImage(photoPath);
           uploadedPhotoUrls.add(downloadUrl);
-          // キャプションのキーをダウンロードURLに更新
           if (_photoCaptions.containsKey(photoPath)) {
             updatedPhotoCaptions[downloadUrl] = _photoCaptions[photoPath]!;
           }
@@ -310,7 +354,6 @@ class _CreateLetterScreenState extends ConsumerState<CreateLetterScreen> {
           ),
         );
 
-        // Show ad for free users
         ref.read(advertisementServiceProvider).showInterstitialAdIfNecessary(context);
       }
     } catch (e) {
@@ -493,22 +536,47 @@ class _CreateLetterScreenState extends ConsumerState<CreateLetterScreen> {
                       ],
                     ),
                   ),
-                  // Content
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 28),
-                      child: TextField(
-                        controller: _contentController,
-                        maxLines: null,
-                        expands: true,
-                        style: _getContentStyle(),
-                        decoration: InputDecoration(
-                          hintText: 'あなたの想いを、ここに。',
-                          hintStyle: _getContentStyle().copyWith(color: Colors.black12),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 32),
-                        ),
-                        onChanged: (_) => setState(() {}),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _contentController,
+                              maxLines: null,
+                              expands: true,
+                              style: _getContentStyle(),
+                              decoration: InputDecoration(
+                                hintText: 'あなたの想いを、ここに。',
+                                hintStyle: _getContentStyle().copyWith(color: Colors.black12),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 32),
+                              ),
+                              onChanged: (_) => setState(() {}),
+                            ),
+                          ),
+                          Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: FutureBuilder<bool>(
+                              future: ref.read(paymentRepositoryProvider).isPremium,
+                              builder: (context, snapshot) {
+                                final isPremium = snapshot.data ?? false;
+                                final limit = isPremium ? 5000 : 1000;
+                                final current = _contentController.text.length;
+                                return Text(
+                                  '$current / $limit',
+                                  style: TextStyle(
+                                    color: current > limit ? Colors.red : Colors.black12,
+                                    fontSize: 10,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -516,32 +584,40 @@ class _CreateLetterScreenState extends ConsumerState<CreateLetterScreen> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(28, 0, 28, 48),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         const Divider(color: Colors.black12, thickness: 0.5),
                         const SizedBox(height: 8),
-                        TextField(
-                          controller: _senderController,
-                          textAlign: TextAlign.end,
-                          decoration: const InputDecoration(
-                            hintText: 'あなた',
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                            prefixText: 'From: ',
-                            prefixStyle: TextStyle(color: Colors.black26),
-                          ),
-                          style: GoogleFonts.getFont(
-                            _selectedFont,
-                            fontSize: 16,
-                            color: Colors.black54,
-                            fontStyle: FontStyle.italic,
-                          ),
-                          onChanged: (_) => setState(() {}),
-                                ),
-                              ],
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            const Text(
+                              'From: ',
+                              style: TextStyle(color: Colors.black26, fontSize: 16, fontStyle: FontStyle.italic),
                             ),
-                          ),
+                            IntrinsicWidth(
+                              child: TextField(
+                                controller: _senderController,
+                                textAlign: TextAlign.end,
+                                decoration: const InputDecoration(
+                                  hintText: 'あなた',
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                style: GoogleFonts.getFont(
+                                  _selectedFont,
+                                  fontSize: 16,
+                                  color: Colors.black54,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                onChanged: (_) => setState(() {}),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                         ],
                       ),
                     ],
@@ -582,30 +658,7 @@ class _CreateLetterScreenState extends ConsumerState<CreateLetterScreen> {
                   label: '封印が解ける日',
                   value: '${_selectedDate.year}年${_selectedDate.month}月${_selectedDate.day}日',
                   icon: Icons.history_edu,
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: _selectedDate,
-                      firstDate: DateTime.now(),
-                      lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
-                      builder: (context, child) {
-                        return Theme(
-                          data: Theme.of(context).copyWith(
-                            colorScheme: ColorScheme.dark(
-                              primary: AppTheme.accentGold,
-                              onPrimary: AppTheme.primaryDark,
-                              surface: AppTheme.surfaceDark,
-                              onSurface: AppTheme.textWhite,
-                            ),
-                          ),
-                          child: child!,
-                        );
-                      },
-                    );
-                    if (date != null) {
-                      setState(() => _selectedDate = date);
-                    }
-                  },
+                  onTap: () => _selectDate(context),
                 ),
                 const Divider(height: 48, color: Colors.white10),
                 _buildLetterOption(

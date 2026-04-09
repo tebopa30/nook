@@ -585,7 +585,7 @@ class _ViewLetterScreenState extends ConsumerState<ViewLetterScreen> with Ticker
                         foregroundColor: const Color(0xFF5D4037),
                         side: const BorderSide(color: Colors.black12),
                       ),
-                      child: const Text('文箱へ戻る'),
+                      child: const Text('ポストへ戻る'),
                     ),
                   ),
                 ],

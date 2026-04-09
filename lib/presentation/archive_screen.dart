@@ -49,7 +49,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> with SingleTicker
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('文箱', style: TextStyle(fontFamily: 'serif', letterSpacing: 2)),
+        title: const Text('ポスト', style: TextStyle(fontFamily: 'serif', letterSpacing: 2)),
         bottom: TabBar(
           controller: _tabController,
           labelColor: AppTheme.accentGold,
@@ -80,7 +80,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> with SingleTicker
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inventory_2_outlined, size: 64, color: AppTheme.accentGold.withOpacity(0.2)),
+            Icon(Icons.mark_as_unread_outlined, size: 64, color: AppTheme.accentGold.withOpacity(0.2)),
             const SizedBox(height: 24),
             Text(
               isReceived ? 'まだ手紙は届いていないようです' : 'まだ手紙を綴っていないようです',
@@ -112,7 +112,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> with SingleTicker
                 builder: (context) => AlertDialog(
                   backgroundColor: AppTheme.surfaceDark,
                   title: const Text('手紙を整理しますか？', style: TextStyle(color: AppTheme.accentGold, fontFamily: 'serif')),
-                  content: const Text('この手紙を文箱から削除します。\n（この操作は元に戻せません）', style: TextStyle(color: Colors.white70)),
+                  content: const Text('この手紙をポストから削除します。\n（この操作は元に戻せません）', style: TextStyle(color: Colors.white70)),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context), 

@@ -119,9 +119,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 24),
                     _buildMenuButton(
                       context,
-                      title: '文箱を開く',
+                      title: 'ポストを開く',
                       subtitle: '届いた言葉、綴った想いを辿る。',
-                      icon: Icons.inventory_2_rounded,
+                      icon: Icons.mark_as_unread_rounded,
                       onTap: () => context.push('/archive'),
                     ),
                     const SizedBox(height: 48),

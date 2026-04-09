@@ -186,7 +186,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                         ),
                         const SizedBox(height: 28),
                         _buildFeatureRow(Icons.photo_library_outlined, '写真添付の制限解除（最大3枚まで）'),
-                        _buildFeatureRow(Icons.edit_calendar_rounded, '10年先までの配達指定が可能'),
+                        _buildFeatureRow(Icons.edit_calendar_rounded, '1年先までの配達指定が可能'),
                         _buildFeatureRow(Icons.palette_outlined, '限定カラーのワックスと全デザイン解放'),
                         const SizedBox(height: 36),
                         
@@ -263,14 +263,14 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                   ),
                   const SizedBox(height: 24),
                   const Text(
-                    'タイムカプセル切手',
+                    '秘密の切手',
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'serif'),
                   ),
                   const SizedBox(height: 8),
                   const Text('1枚 / 100円', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppTheme.accentGold)),
                   const SizedBox(height: 20),
                   const Text(
-                    '1ヶ月から10年の時を刻み、未来へ想いを届けるための特別な切手。\n一通につき、すべての封筒・便箋デザインが解放されます。',
+                    '最大1年の時を刻み、未来へ想いを届けるための特別な切手。\n写真の3枚添付、およびすべての便箋デザインが解放されます。',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.white70, height: 1.7, fontSize: 13),
                   ),
@@ -358,7 +358,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
           const SizedBox(height: 20),
           _buildBenefitItem(Icons.color_lens_outlined, '多彩なデザイン', '切手またはプレミアムで、すべての封筒・便箋が選択可能になります。'),
           const SizedBox(height: 16),
-          _buildBenefitItem(Icons.history_edu, '時を超える手紙', '1週間以上先の指定（タイムカプセル）が可能になります。'),
+          _buildBenefitItem(Icons.history_edu, '時を超える手紙', '1週間以上先の指定（秘密の切手）が可能になります。'),
         ],
       ),
     );
