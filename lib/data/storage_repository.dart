@@ -1,40 +1,58 @@
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../main.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+import 'package:uuid/uuid.dart';
 
 final storageRepositoryProvider = Provider<StorageRepository>((ref) {
-  final isInitialized = ref.watch(firebaseInitializedProvider);
-  if (isInitialized) {
-    return FirebaseStorageRepository(FirebaseStorage.instance);
-  } else {
-    return MockStorageRepository();
-  }
+  return StorageRepository();
 });
 
-abstract class StorageRepository {
-  Future<String> uploadPhoto(File file, String userId);
-}
+class StorageRepository {
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final _uuid = const Uuid();
 
-class FirebaseStorageRepository implements StorageRepository {
-  final FirebaseStorage _storage;
+  /// 画像を圧縮してFirebase Storageにアップロードし、ダウンロードURLを返す
+  Future<String> uploadCompressedImage(String localPath) async {
+    final file = File(localPath);
+    if (!file.existsSync()) {
+      throw Exception('File does not exist at $localPath');
+    }
 
-  FirebaseStorageRepository(this._storage);
-
-  @override
-  Future<String> uploadPhoto(File file, String userId) async {
-    final fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.uri.pathSegments.last}';
-    final ref = _storage.ref().child('users/$userId/photos/$fileName');
+    // 1. 圧縮処理
+    final tempDir = await getTemporaryDirectory();
+    final targetPath = p.join(tempDir.path, '${_uuid.v4()}.webp');
     
-    final uploadTask = await ref.putFile(file);
-    return await uploadTask.ref.getDownloadURL();
-  }
-}
+    final XFile? compressedFile = await FlutterImageCompress.compressAndGetFile(
+      localPath,
+      targetPath,
+      quality: 80, // 画質と容量のバランスが良い設定
+      format: CompressFormat.webp, // WebPは高圧縮かつ高画質
+    );
 
-class MockStorageRepository implements StorageRepository {
-  @override
-  Future<String> uploadPhoto(File file, String userId) async {
-    // Return a dummy URL for local testing
-    return 'https://example.com/mock_photo_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    if (compressedFile == null) {
+      throw Exception('Compression failed');
+    }
+
+    // 2. アップロード処理
+    final storagePath = 'letters/photos/${_uuid.v4()}.webp';
+    final ref = _storage.ref().child(storagePath);
+    
+    final uploadTask = ref.putFile(File(compressedFile.path));
+    final snapshot = await uploadTask;
+    
+    // 3. URLの取得
+    final downloadUrl = await snapshot.ref.getDownloadURL();
+    
+    // 4. 一時ファイルの削除
+    try {
+      await File(compressedFile.path).delete();
+    } catch (_) {
+      // 失敗してもクリティカルではない
+    }
+
+    return downloadUrl;
   }
 }

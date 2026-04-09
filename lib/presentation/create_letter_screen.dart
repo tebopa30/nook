@@ -7,6 +7,7 @@ import '../data/payment_repository.dart';
 import '../data/letter_repository.dart';
 import '../data/sharing_service.dart';
 import '../data/advertisement_service.dart';
+import '../data/storage_repository.dart';
 import '../domain/letter.dart';
 import 'dart:math' as math;
 import 'package:image_picker/image_picker.dart';
@@ -217,6 +218,29 @@ class _CreateLetterScreenState extends ConsumerState<CreateLetterScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // 1. 写真のアップロード（本番環境用）
+      final storageRepo = ref.read(storageRepositoryProvider);
+      final List<String> uploadedPhotoUrls = [];
+      final Map<String, String> updatedPhotoCaptions = {};
+
+      for (final photoPath in _attachedPhotos) {
+        if (photoPath.contains('handwriting')) {
+          // 手書きは現状ダミーパスのまま（必要に応じてこちらも保存ロジックを追加可能）
+          uploadedPhotoUrls.add(photoPath);
+          if (_photoCaptions.containsKey(photoPath)) {
+            updatedPhotoCaptions[photoPath] = _photoCaptions[photoPath]!;
+          }
+        } else {
+          // ローカルの画像ファイルを圧縮してアップロード
+          final downloadUrl = await storageRepo.uploadCompressedImage(photoPath);
+          uploadedPhotoUrls.add(downloadUrl);
+          // キャプションのキーをダウンロードURLに更新
+          if (_photoCaptions.containsKey(photoPath)) {
+            updatedPhotoCaptions[downloadUrl] = _photoCaptions[photoPath]!;
+          }
+        }
+      }
+
       DateTime? expiresAt;
       if (_selectedExpiration != '無制限') {
         final now = DateTime.now();
@@ -237,7 +261,7 @@ class _CreateLetterScreenState extends ConsumerState<CreateLetterScreen> {
         toName: _toController.text,
         senderName: _senderController.text.isEmpty ? '名無し' : _senderController.text,
         content: _contentController.text,
-        photoUrls: _attachedPhotos,
+        photoUrls: uploadedPhotoUrls,
         themeId: 'default',
         fontFamily: _selectedFont,
         fontSize: _selectedSize,
@@ -246,7 +270,7 @@ class _CreateLetterScreenState extends ConsumerState<CreateLetterScreen> {
         createdAt: DateTime.now(),
         envelopeType: _selectedEnvelope,
         paperType: _selectedPaper,
-        photoCaptions: _photoCaptions,
+        photoCaptions: updatedPhotoCaptions,
         passcode: _passcodeEnabled ? _passcode : null,
         expiresAt: expiresAt,
       );
@@ -1060,15 +1084,6 @@ class _CreateLetterScreenState extends ConsumerState<CreateLetterScreen> {
     }
   }
 
-  Color _getEnvelopeColor(String design) {
-    switch (design) {
-      case '和風': return const Color(0xFFE0E0D0);
-      case '西洋風': return const Color(0xFFE8E4D8);
-      case '記念日': return const Color(0xFFFFE0E0);
-      case '誕生日': return const Color(0xFFE0F0FF);
-      default: return const Color(0xFFF5F5F5);
-    }
-  }
 
   void _showDrawingCanvas() {
     List<Offset?> dialPoints = [];

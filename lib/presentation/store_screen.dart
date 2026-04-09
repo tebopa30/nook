@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:go_router/go_router.dart';
 import '../data/payment_repository.dart';
 import '../core/theme/app_theme.dart';
 
@@ -288,8 +289,36 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
             ),
           ),
           const SizedBox(height: 60),
+          _buildLegalFooter(),
+          const SizedBox(height: 40),
         ],
       ),
+    );
+  }
+
+  Widget _buildLegalFooter() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextButton(
+              onPressed: () => context.push('/terms'),
+              child: const Text('利用規約', style: TextStyle(color: Colors.white38, fontSize: 11)),
+            ),
+            const Text(' | ', style: TextStyle(color: Colors.white10, fontSize: 11)),
+            TextButton(
+              onPressed: () => context.push('/privacy'),
+              child: const Text('プライバシーポリシー', style: TextStyle(color: Colors.white38, fontSize: 11)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          '© 2026 Nook Team',
+          style: TextStyle(color: Colors.white10, fontSize: 10),
+        ),
+      ],
     );
   }
 
