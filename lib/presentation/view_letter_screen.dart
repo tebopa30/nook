@@ -436,6 +436,25 @@ class _ViewLetterScreenState extends ConsumerState<ViewLetterScreen> with Ticker
                 '予定日時: ${_letter!.unlockTime.year}/${_letter!.unlockTime.month}/${_letter!.unlockTime.day} ${_letter!.unlockTime.hour.toString().padLeft(2, '0')}:${_letter!.unlockTime.minute.toString().padLeft(2, '0')}',
                 style: const TextStyle(color: Colors.white24, fontSize: 12),
               ),
+              const SizedBox(height: 64),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.info_outline, size: 14, color: Colors.white38),
+                    SizedBox(width: 8),
+                    Text(
+                      '一度開くと「ポスト」へ自動で保存されます',
+                      style: TextStyle(color: Colors.white38, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

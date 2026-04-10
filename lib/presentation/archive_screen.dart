@@ -148,15 +148,12 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> with SingleTicker
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'serif'),
                         ),
                         const SizedBox(height: 6),
-                        Text(
-                          '${letter.createdAt.year}/${letter.createdAt.month.toString().padLeft(2, '0')}/${letter.createdAt.day.toString().padLeft(2, '0')} 投函',
-                          style: const TextStyle(fontSize: 12, color: Colors.white38),
-                        ),
+                        _buildDateOrLockInfo(letter),
                       ],
                     ),
                   ),
-                  if (!letter.isOpened && !isReceived)
-                    const Icon(Icons.lock_clock_outlined, size: 20, color: Colors.white24)
+                  if (letter.unlockTime.isAfter(DateTime.now()) && isReceived)
+                    const Icon(Icons.lock_clock_outlined, size: 20, color: AppTheme.accentGold)
                   else
                     const Icon(Icons.arrow_forward_ios, size: 14, color: AppTheme.accentGold),
                 ],
@@ -165,6 +162,33 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> with SingleTicker
           ),
         );
       },
+    );
+  }
+
+  Widget _buildDateOrLockInfo(Letter letter) {
+    final now = DateTime.now();
+    final isLocked = letter.unlockTime.isAfter(now);
+    
+    if (isLocked) {
+      final diff = letter.unlockTime.difference(now);
+      String timeText;
+      if (diff.inDays > 1) {
+        timeText = 'あと ${diff.inDays} 日で開封可能';
+      } else if (diff.inHours > 1) {
+        timeText = 'あと ${diff.inHours} 時間で開封可能';
+      } else {
+        timeText = 'まもなく開封可能';
+      }
+      
+      return Text(
+        timeText,
+        style: const TextStyle(fontSize: 12, color: AppTheme.accentGold, fontWeight: FontWeight.bold),
+      );
+    }
+    
+    return Text(
+      '${letter.createdAt.year}/${letter.createdAt.month.toString().padLeft(2, '0')}/${letter.createdAt.day.toString().padLeft(2, '0')} 投函',
+      style: const TextStyle(fontSize: 12, color: Colors.white38),
     );
   }
 
